@@ -1,0 +1,119 @@
+﻿<div class="stats">
+  <div>Left-click: Expose A Cell | Right-click: Seal A Cell</div>
+  <div>Game Status: @gameStatus</div>
+  <button class="reset" @onclick="@(() => Reset())">Reset</button>
+</div>
+
+<div class="@boardClass">
+  @for (int i = 0; i < 10; i++)
+  {
+    for (int j = 0; j < 10; j++)
+    {
+      int row = i;
+      int column = j;
+
+      if (minesweeper.CellStates[row, column] == Minesweeper.CellState.EXPOSED && !minesweeper.mines[i, j])
+      {
+        <div class="cell" style="background-color:rgba(10, 255, 10, 0.8)" @oncontextmenu:preventDefault>
+          @if (minesweeper.AdjacentMinesCountAt(row, column) > 0)
+          {
+            @minesweeper.AdjacentMinesCountAt(row, column)
+          }
+        </div>
+      }
+      else if (minesweeper.CellStates[row, column] == Minesweeper.CellState.EXPOSED && minesweeper.mines[i, j])
+      {
+        <div class="cell" style="background-color:red" @oncontextmenu:preventDefault></div>
+      }
+      else if (minesweeper.CellStates[row, column] == Minesweeper.CellState.SEALED)
+      {
+        <div class="cell" style="background-color:rgb(255, 106, 0)" @oncontextmenu="@(() => OnRightClick(row, column))" @oncontextmenu:preventDefault></div>
+      }
+      else
+      {
+        <div class="cell" @onclick="@(() =>OnLeftClick(row, column))" @oncontextmenu="@(() => OnRightClick(row, column))" @oncontextmenu:preventDefault></div>
+      }
+    }
+  }
+</div>
+
+<style scoped>
+  .board {
+    display: grid;
+    grid-template-columns: auto auto auto auto auto auto auto auto auto auto;
+    padding: 10px;
+    width: 900px;
+    height: 900px;
+    border-radius: 10%;
+  }
+
+  .board_disabled {
+    pointer-events: none;
+    display: grid;
+    grid-template-columns: auto auto auto auto auto auto auto auto auto auto;
+    padding: 10px;
+    width: 900px;
+    height: 900px;
+    border-radius: 10%;
+  }
+
+  .cell {
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.8);
+    width: 90px;
+    height: 90px;
+    font-size: 90px;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 90px;
+    border-radius: 10%;
+    cursor: pointer;
+  }
+
+    .cell:hover {
+      background-color: rgba(106, 202, 9, 0.8);
+    }
+
+    .cell:active {
+      background-color: red;
+    }
+</style>
+
+@code {
+  Minesweeper minesweeper;
+
+  [Parameter]
+  public string gameStatus { get; set; }
+
+  [Parameter]
+  public int adjacentMineCount { get; set; }
+
+  string boardClass;
+
+  protected override void OnInitialized() {
+    Random rand = new Random();
+    minesweeper = new Minesweeper();
+    minesweeper.SetMines(rand.Next());
+    gameStatus = "INPROGRESS";
+    boardClass = "board";
+  }
+
+  public void OnLeftClick(int row, int column) {
+    minesweeper.ExposeCell(row, column);
+    adjacentMineCount = minesweeper.AdjacentMinesCountAt(row, column);
+    gameStatus = minesweeper.GetGameStatus().ToString();
+
+    if (gameStatus == "LOST" || gameStatus == "WIN") {
+      boardClass = "board_disabled";
+    }
+  }
+
+  public void OnRightClick(int row, int column) {
+    minesweeper.ToggleSeal(row, column);
+    gameStatus = minesweeper.GetGameStatus().ToString();
+  }
+
+  public void Reset() {
+    OnInitialized();
+  }
+}
